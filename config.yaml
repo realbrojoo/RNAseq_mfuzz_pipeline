@@ -1,0 +1,242 @@
+# =========================================================
+# Mfuzz pipeline config
+# ---------------------------------------------------------
+# 이 파일만 수정하면:
+# - 입력 CSV 파일 경로
+# - gene_id / symbol 컬럼명
+# - 시간대별 샘플 컬럼명
+# - log2 적용 여부
+# - filter.NA / fill.NA / filter.std
+# - cluster 수, m 추정 여부
+# - cselection / Dmin 실행 여부
+# - plot palette / 색상 / 배경 / 축 / 중심선
+# - PDF / PNG 저장 옵션
+# 등을 바꿀 수 있음
+# =========================================================
+
+data:
+  # 입력 CSV 파일 경로
+  input_file: "input.csv"
+
+  # CSV 헤더 사용 여부
+  header: true
+
+  # 구분자. CSV면 "," / TSV면 "\t"
+  delimiter: ","
+
+  # 결측치로 인식할 문자열
+  na_strings: ["NA", "", "NaN", "nan", "null"]
+
+  # gene id 컬럼명
+  gene_id_col: "gene_id"
+
+  # symbol 컬럼명
+  # 없으면 null 로 둬도 됨
+  symbol_col: "symbol"
+
+  # 시간대별 샘플 컬럼 정의
+  # 다른 데이터셋을 분석할 때는 여기만 바꾸면 됨
+  sample_groups:
+    - name: "Ctrl"
+      time: 0
+      columns: ["HPctrl1", "HPctrl2", "HPctrl3", "HPctrl4"]
+
+    - name: "1hr"
+      time: 1
+      columns: ["HP1hr1", "HP1hr2", "HP1hr3", "HP1hr4"]
+
+    - name: "4hr"
+      time: 4
+      columns: ["HP4hr1", "HP4hr2", "HP4hr3", "HP4hr4"]
+
+preprocess:
+  # replicate를 시간대별로 묶을 때 사용할 함수
+  # options: mean, median
+  aggregate_fun: "mean"
+
+  # 현재 값이 이미 log scale이면 false 유지
+  # 아직 log 변환 안 된 normalized value면 true
+  apply_log2: false
+
+  # log2(x + pseudo_count)에서 pseudo_count 값
+  pseudo_count: 1
+
+  filter_NA:
+    # filter.NA 사용 여부
+    enabled: true
+
+    # 허용할 최대 결측 비율
+    # 시간점이 3개일 때 0.34면 결측 2개 이상 gene 제거
+    thres: 0.34
+
+  fill_NA:
+    # fill.NA 사용 여부
+    enabled: true
+
+    # 결측값 보정 방법
+    # options: mean, median, knn, knnw
+    mode: "mean"
+
+    # knn / knnw 모드일 때 이웃 수
+    k: 10
+
+  filter_std:
+    # filter.std 사용 여부
+    enabled: true
+
+    # 최소 표준편차
+    min_std: 0.5
+
+    # TRUE면 SD 분포 시각화 plot 생성
+    visu: false
+
+  # gene-wise z-score standardization
+  standardise:
+    enabled: true
+
+clustering:
+  # cluster 개수 c
+  cluster_number: 4
+
+  # m 값을 자동 추정할지 여부
+  estimate_m: true
+
+  # estimate_m=false 일 때 사용할 m 값
+  m: null
+
+  # random seed
+  random_seed: 1234
+
+parameter_search:
+  # cselection 실행 여부
+  run_cselection: false
+
+  cselection:
+    # 시험할 cluster 수 범위
+    crange: [3, 4, 5, 6, 7, 8]
+
+    # 반복 횟수
+    repeats: 5
+
+    # plot 생성 여부
+    visu: true
+
+  # Dmin 실행 여부
+  run_Dmin: false
+
+  Dmin:
+    crange: [3, 4, 5, 6, 7, 8]
+    repeats: 3
+    visu: true
+
+plot:
+  # 여러 palette를 한 번에 렌더링할지 여부
+  render_multiple_palettes: true
+
+  # 렌더링할 palette 목록
+  # options:
+  # - default
+  # - fancy
+  # - viridis
+  # - magma
+  # - inferno
+  # - plasma
+  # - cividis
+  # - hot_cold
+  palette_names_to_render: ["viridis", "magma", "inferno", "hot_cold"]
+
+  # render_multiple_palettes=false 일 때 사용할 palette
+  active_palette: "viridis"
+
+  # palette 색 개수
+  palette_n: 64
+
+  # 색 순서 뒤집기 여부
+  reverse_palette: false
+
+  # 전체 gene plot에서 최소 membership
+  min_mem_all: 0.0
+
+  # core gene plot 및 alpha-core 기준 membership
+  min_mem_core: 0.7
+
+  # x축 / y축 라벨
+  xlab: "Time"
+  ylab: "Standardized expression"
+
+  # y축 범위
+  # [0, 0] 이면 자동
+  ylim_set: [0, 0]
+
+  # 중심선 표시 여부
+  centre: true
+  centre_col: "black"
+  centre_lwd: 2
+
+  # 배경 / 축 / 텍스트 색
+  bg: "white"
+  line_col: "black"
+  ax_col: "black"
+  col_axis: "black"
+  col_lab: "black"
+  col_main: "black"
+  col_sub: "black"
+
+  # subplot 열 수
+  # null이면 자동 계산
+  ncol: null
+
+  # 특정 cluster만 그리고 싶으면 번호 지정
+  # 전체를 그리려면 null
+  single_cluster: null
+
+  # 추가 plotting args
+  plot_extra:
+    cex.main: 1.0
+    cex.lab: 1.0
+    cex.axis: 0.9
+
+  colorbar:
+    # colorbar PDF 저장 여부
+    enabled: true
+
+    # horizontal 여부
+    horizontal: false
+
+    # 제목 prefix
+    main_prefix: "Membership"
+
+    # 제목 크기
+    cex.main: 1.0
+
+output:
+  # 결과 폴더
+  outdir: "mfuzz_out"
+
+  # 중간 CSV 저장 여부
+  save_intermediate_csv: true
+
+  # sessionInfo 저장 여부
+  save_session_info: true
+
+  pdf:
+    # PDF width / height
+    width: 12
+    height: 8
+
+  png:
+    # cluster별 PNG 저장 여부
+    save_cluster_png: true
+
+    # PNG width / height (pixel)
+    width: 1800
+    height: 1400
+
+    # 해상도 (dpi)
+    res: 200
+
+    # 배경색
+    bg: "white"
+
+
+    
